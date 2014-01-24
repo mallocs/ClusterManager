@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Basic Cluster Manager Demo</title>
+    <style type="text/css">
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial;
+        font-size: 14px;
+      }
+
+      .info {
+        width: 200px;
+      }
+
+      .info img {
+        border: 0;
+      }
+
+      .info-body {
+        width: 200px;
+        height: 200px;
+        line-height: 200px;
+        margin: 2px 0;
+        text-align: center;
+        overflow: hidden;
+      }
+
+      .info-img {
+        height: 220px;
+        width: 200px;
+      }
+    </style>
+
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
+
+  <script type="text/javascript" src="../clustermanager.js"></script>
+  <script type="text/javascript" src="./data.json"></script>
+
+  <script type="text/javascript">
+
+    function $(element) {
+        return document.getElementById(element) || null;
+    }
+
+    var clusterDemo = {};
+    clusterDemo.init = function() {
+
+        clusterDemo.infoWindow = new google.maps.InfoWindow();
+        var map = new google.maps.Map($('map_canvas'), { zoom   : 6,
+                                                     center : new google.maps.LatLng(36.7782, -119.4179)});
+        clusterDemo.map = map;
+
+        var cluster_mgr = new ClusterManager(map);
+        clusterDemo.cluster_mgr = cluster_mgr;
+
+        for(var i=0, markers=[], pic; pic=data.photos[i]; i++) {
+            var marker = clusterDemo.makeMarker(pic.latitude, pic.longitude, pic);
+            markers.push(marker);
+        }
+        cluster_mgr.addMarkers(markers);
+        cluster_mgr.show();
+    };
+
+    clusterDemo.makeMarker = function(lat, lng, opts) {
+        var latLng = new google.maps.LatLng(lat, lng);
+ 
+        var imageUrl = 'http://chart.apis.google.com/chart?cht=mm&chs=24x32&chco=' +
+            'FFFFFF,008CFF,000000&ext=.png';
+        var markerImage = new google.maps.MarkerImage(imageUrl,
+            new google.maps.Size(24, 32));
+
+        var marker = new google.maps.Marker({
+          'position' : latLng,
+          'icon'     : markerImage,
+          'title'    : opts.photo_title || opts.title
+        });
+
+        var fn = clusterDemo.markerClickFunction(opts, latLng);
+        google.maps.event.addListener(marker, 'click', fn);
+        return marker;
+    };
+
+    clusterDemo.markerClickFunction = function(opts, latlng) {
+      return function(e) {
+
+        e.cancelBubble = true;
+        e.returnValue = false;
+        if(e.stopPropagation) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+        var title = opts.photo_title || opts.title || 'No title';
+
+        if(opts.photo_url) {
+          var url = opts.photo_url || '';
+          var fileurl = opts.photo_file_url || '';
+          var ownerurl = opts.owner_url || '';
+          var ownername = opts.owner_name || '';
+
+          var infoHtml = '<div class="info"><h3>' + title +
+            '</h3><div class="info-body">' +
+            '<a href="' + url + '" target="_blank"><img src="' +
+            fileurl + '" class="info-img"/></a></div>' +
+            '<a href="http://www.panoramio.com/" target="_blank">' +
+            '<img src="http://maps.google.com/intl/en_ALL/mapfiles/' +
+            'iw_panoramio.png"/></a><br/>' +
+            '<a href="' + ownerurl + '" target="_blank">' + ownername +
+            '</a></div></div>';
+        } else {
+          var infoHtml = '<div class="info"><h3>' + title + '</h3></div>';
+        }
+
+        clusterDemo.infoWindow.setContent(infoHtml);
+        clusterDemo.infoWindow.setPosition(latlng);
+        var now = new Date();
+        clusterDemo.infoWindow.setZIndex(now.getTime());
+        clusterDemo.infoWindow.open(clusterDemo.map);
+      };
+    };
+  </script>
+
+  <script type="text/javascript">
+    google.maps.event.addDomListener(window, 'load', clusterDemo.init);
+  </script>
+
+  </head>
+  <body>
+  <body>
+    <h3>Basic Cluster Manager Demo</h3>
+    <div id="map_canvas" style="width: 1000px; height: 500px"></div>
+  </body>
+</html>
