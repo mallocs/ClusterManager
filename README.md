@@ -46,6 +46,8 @@ return marker;
 }
 ```
 
+[See API documentation](http://mallocs.github.io/ClusterManager/docs/symbols/ClusterManager.html)
+
 ### Comparison
 Do a [speed comparison](http://mallocs.github.io/ClusterManager/demos/speed_test.html) of ClusterManager to other Google Maps clustering utilities.
 
