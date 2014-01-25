@@ -3,7 +3,7 @@ ClusterManager
 ==============
 A cluster manager for Google Maps API v3
 
-This library creates and manages clusters for Google Maps API v3. It does two things to make maps with large numbers of markers more useable: 1) Combines markers in close proximity to each other based on zoom level into clusters, 2) Only adds markers in the current viewport (and optional padding) to the map. 
+This library creates and manages clusters for Google Maps API v3. It does two things to make maps with large numbers of markers more usable: 1) Combines markers in close proximity to each other based on zoom level into clusters, 2) Only adds markers in the current viewport (and optional padding) to the map. 
 
 ### How it works
 The manager sets up a dictionary for clusters and a dictionary for markers. Every marker that's added to the manager has a string created based on it's latitude, longitude, and zoom level and that's used to add it to the cluster dictionary. Nearby markers will hash to the same string so nothing has to be calculated. Nearby clusters are then combined. Markers can be added with optional type and subtypes so subsets of markers can be shown and hidden. Markers with the same subtype will still be clustered together, but can be shown or hidden separately. Markers with the same type will be clustered together and can also be hidden or shown separately. The function used to create the clusters is stored and this function can be overridden for greater control of the look and/or behavior of the clusters for each marker type.
@@ -14,8 +14,8 @@ Markers are created however you like, added to array, the array is added to the 
 ```javascript
 var cluster_mgr = new ClusterManager(map);
 for(var i=0, markers=[], pic; pic=data.photos[i]; i++) {
-var marker = clusterDemo.makeMarker(pic.latitude, pic.longitude, pic);
-markers.push(marker);
+    var marker = clusterDemo.makeMarker(pic.latitude, pic.longitude, pic);
+    markers.push(marker);
 }
 cluster_mgr.addMarkers(markers);
 cluster_mgr.show();
@@ -24,19 +24,32 @@ cluster_mgr.show();
 Alternatively, you can use the cluster manager to create the markers and/or add markers one at a time:
 ```javascript
 for (var i=0, pic; pic=data.photos[i]; i++) {
-var subtype = i%2 === 0 ? "even":"odd"
-var marker = cluster_mgr.createMarker({ title    : "Marker " + i + ": " + subtype,
-                                        type     : "demo",
-                                        content  : "Marker " + i + ": " + subtype,
-                                        position : new google.maps.LatLng(pic.latitude, pic.longitude),
-                                        subtype  : subtype
-                                       });
+    var subtype = i%2 === 0 ? "even":"odd"
+    var marker = cluster_mgr.createMarker({ title    : "Marker " + i + ": " + subtype,
+                                            type     : "demo",
+                                            content  : "Marker " + i + ": " + subtype,
+                                            position : new google.maps.LatLng(pic.latitude, pic.longitude),
+                                            subtype  : subtype
+                                           });
 cluster_mgr.addMarker(marker);
 }
 ```
 See the [complex example](http://mallocs.github.io/ClusterManager/demos/complex.html) for how to show and hide markers from different types and subtypes.
 
-### Author:
+Finally, you can create a custom clustering function. The [functions example](http://mallocs.github.io/ClusterManager/demos/functions.html) uses this to change the color of the cluster markers based on how many markers of odd or even subtype it includes.
+
+```javascript
+cluster_mgr.setClusterFn("demo", clusterDemo.createClusterMarker);
+clusterDemo.createClusterMarker = function(marker_list, center_lat, center_lng, manager) {
+//Create some custom map marker. See the example code for the actual function. 
+return marker;
+}
+```
+
+### Comparison
+Do a [speed comparison](http://mallocs.github.io/ClusterManager/demos/speed_test.html) of ClusterManager to other Google Maps clustering utilities.
+
+### Author
 Marcus Ulrich
 
 ### Licence
