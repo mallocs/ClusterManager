@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Complex Cluster Manager Demo - Custom Cluster Function</title>
+    <style type="text/css">
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial;
+        font-size: 14px;
+      }
+
+      .info {
+        width: 200px;
+      }
+
+      .info img {
+        border: 0;
+      }
+
+      .info-body {
+        width: 200px;
+        height: 200px;
+        line-height: 200px;
+        margin: 2px 0;
+        text-align: center;
+        overflow: hidden;
+      }
+
+      .info-img {
+        height: 220px;
+        width: 200px;
+      }
+    </style>
+
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
+
+  <script type="text/javascript" src="../clustermanager.js"></script>
+  <script type="text/javascript" src="./data.json"></script>
+
+  <script type="text/javascript">
+
+    function $(element) {
+        return document.getElementById(element) || null;
+    }
+    var clusterDemo = {};
+
+    clusterDemo.infoWindow = new google.maps.InfoWindow();
+
+    clusterDemo.init = function() {
+        $('show_odd_markers').checked = true;
+        $('show_even_markers').checked = true;
+
+        var map = new google.maps.Map($('map_canvas'), { zoom   : 5,
+                                                         center : new google.maps.LatLng(36.7782, -119.4179)});
+        clusterDemo.map = map;
+
+        var cluster_mgr = new ClusterManager(map);
+        cluster_mgr.setClusterFn("demo", clusterDemo.createClusterMarker);
+        clusterDemo.cluster_mgr = cluster_mgr;
+
+        var pics = data.photos;
+        for (var i=0, pic; pic=pics[i]; i++) {
+          var subtype = i%2 === 0 ? "even":"odd"
+          var icon_color = i%2 === 0 ? "FF0000":"0000FF"
+          //you can create your own markers or use the manager to create them.
+          var marker = cluster_mgr.createMarker({ title      : "Marker " + i + ": " + subtype,
+                                                  type       : "demo",
+                                                  content    : "Marker " + i + ": " + subtype,
+                                                  position   : new google.maps.LatLng(pic.latitude, pic.longitude),
+                                                  subtype    : subtype,
+                                                  icon_color : icon_color
+                                                 });
+          cluster_mgr.addMarker(marker);
+        }
+
+        cluster_mgr.show();
+    };
+
+    clusterDemo.showHide = function(el, type, subtype) {
+        var CM = clusterDemo.cluster_mgr;
+        if(typeof subtype !== "undefined" && typeof type !== "undefined") {
+            if(el.checked) CM.show(type, subtype);
+            else CM.hide(type, subtype);
+        } 
+    };
+
+    clusterDemo.createClusterMarker = function(marker_list, center_lat, center_lng, manager) {
+        var htmlEl = document.createElement("div");
+        htmlEl.style.width = "400px";
+        function markerClickClosure(marker) {
+            return function(e) { google.maps.event.trigger(marker, "click", e);};
+        }
+
+        for(var i=0, odds=0, evens=0, marker; marker=marker_list[i]; i++) {
+
+            if(marker.subtype === "odd") odds++;
+            else evens++;
+
+            if(i<=10) {
+                var markerSpan = document.createElement("span");
+                markerSpan.innerHTML = '<b>' + manager.getMarkerMeta(marker).summary + '</b><br>'
+                markerSpan.onclick = markerClickClosure(marker);
+                markerSpan.style.color = "#334499";
+                markerSpan.style.cursor = "pointer";
+                htmlEl.appendChild(markerSpan);
+            }
+        }
+        var factor = 255/i;
+        var red = Math.floor((evens*factor)).toString(16);
+        if(red.length === 1) red = "0" + red;
+        var blue = Math.floor((odds*factor)).toString(16);
+        if(blue.length === 1) blue = "0" + blue;
+        var icon_color = red + "00" + blue;
+        var text_color = "ffffff";
+
+        if(marker_list.length > 10) {
+            htmlEl.appendChild(document.createTextNode((marker_list.length - 10) + " more markers in this area. Zoom in for details."));
+        }
+
+        var icon = manager.createClusterIcon(marker_list.length, manager.getPrecision(), icon_color, text_color);
+        var marker = manager.createMarker({ "position"      : new google.maps.LatLng(center_lat, center_lng),
+                                            "title"         : marker_list.length + " markers",
+                                            "content"       : htmlEl,
+                                            "summary"       : marker_list.length + " markers",
+                                            "icon"          : icon,
+                                            "shape"         : icon["shape"],
+                                            "zIndex"        : marker_list.length
+                                           });
+        return marker;
+    };
+
+  </script>
+
+  <script type="text/javascript">
+    google.maps.event.addDomListener(window, 'load', clusterDemo.init);
+  </script>
+
+  </head>
+  <body>
+  <body>
+    <h3>Complex Cluster Manager Demo - Custom Cluster Function</h3>
+    <div id="map_canvas" style="width: 1000px; height: 500px"></div>
+    <input type="checkbox" checked=true id="show_odd_markers" onclick='clusterDemo.showHide(this, "demo", "odd");'>Show odd markers</input>
+    <input type="checkbox" checked=true id="show_even_markers" onclick='clusterDemo.showHide(this, "demo", "even");'>Show even markers</input>
+  </body>
+</html>
