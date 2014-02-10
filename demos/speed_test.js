@@ -1,6 +1,6 @@
 /**
- * @fileoverview The demo for ClusterManger. It will show 100 markers using MarkerClusterer and count the time to show the difference between using
- * no clustering, MarkerClusterer, MarkerClustererPlus, and ClusterManager.
+ * @fileoverview The demo for ClusterManger. It will show markers using no clustering, MarkerClusterer, MarkerClustererPlus, and ClusterManager
+ * and show the time used.
  * @author Marcus Ulrich (loosely based on: http://google-maps-utility-library-v3.googlecode.com/svn/trunk/markerclusterer/examples/speed_test.js)
  */
 
@@ -51,25 +51,6 @@ speedTest.init = function() {
 
 };
 
-speedTest.extra = function() {
-  var clusterer = new ClusterManager(speedTest.map, {
-      precision  : 2,
-      icon_color : "FFFF33"
-      });
-  for(var i=0, count=1, geohash, bounds, distance, area; count<50; count++) {
-    geohash = clusterer.getGeohash(39.91, 116.38, count);
-    geohash1 = clusterer.getGeohash(9.91, 16.38, count);
-    bounds = clusterer.geohashGetLatLngBounds(geohash);
-    bounds1 = clusterer.geohashGetLatLngBounds(geohash1);
-    distance1 = google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(0, 0), new google.maps.LatLng(bounds.toSpan().lat(), 0));
-    distance2 = google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(45, 45), new google.maps.LatLng(45, bounds.toSpan().lng()+45));
-
-    console.info(" * " + count + "	" + bounds.toSpan().lat() + "	" + distance1 + "m");
-//    console.log("Example geohash: " + geohash); 
-  }
-
-}
-
 speedTest.showMarkers = function() {
   speedTest.markers = [];
 
@@ -77,6 +58,11 @@ speedTest.showMarkers = function() {
   panel.innerHTML = '';
   var numMarkers = $('nummarkers').value;
   var randomMarkers = $('randommarkers').checked;
+
+  if(numMarkers > 1093 && !randomMarkers) {
+    alert('Sorry, only 1093 nonrandom markers. Check the "Random" box to input unlimited markers.');
+    return;
+  }
 
   for (var i=0, marker; i<numMarkers; i++) {
     if(randomMarkers) {

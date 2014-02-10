@@ -5,6 +5,10 @@ A cluster manager for Google Maps API v3
 
 This library creates and manages clusters for Google Maps API v3. It does two things to make maps with large numbers of markers more usable: 1) Combines markers in close proximity to each other based on zoom level into clusters, 2) Only adds markers in the current viewport (and optional padding) to the map. 
 
+### Requirements
+Google Maps API V3 with geometry library enabled.
+https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=TRUE_OR_FALSE
+
 ### How it works
 The manager sets up a dictionary for clusters and a dictionary for markers. Every marker that's added to the manager has a string created based on it's latitude, longitude, and zoom level and that's used to add it to the cluster dictionary. Nearby markers will hash to the same string so nothing has to be calculated. Nearby clusters are then combined. Markers can be added with optional type and subtypes so subsets of markers can be shown and hidden. Markers with the same subtype will still be clustered together, but can be shown or hidden separately. Markers with the same type will be clustered together and can also be hidden or shown separately. The function used to create the clusters is stored and this function can be overridden for greater control of the look and/or behavior of the clusters for each marker type.
 
