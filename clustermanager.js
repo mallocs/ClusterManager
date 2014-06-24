@@ -140,7 +140,8 @@ ClusterManager.prototype.setPrecision = function(precision) {
     this.clear();
     if (typeof this.clusters[precision] === "undefined") {
         var markers = this.getMarkers();
-        for (var i = 0, marker; marker = markers[i]; i++) {
+        for(var i=0, length=markers.length; i<length; i++) { 
+            var marker = markers[i];
             if (this.getMarkerMeta(marker).subtype !== "cluster") {
                 this.addToCluster(marker, this.getMarkerMeta(marker).type, precision);
             }
@@ -410,7 +411,9 @@ ClusterManager.prototype.boxInBounds = function(geohash, bounds, padding) {
  */
 ClusterManager.prototype.addMarkers = function(markers, type, subtype) {
     if (Object.prototype.toString.call(markers) === '[object Array]') {
-        for (var i = 0, marker; marker = markers[i]; i++) {
+
+        for(var i=0, length=markers.length; i<length; i++) { 
+            var marker = markers[i];
             this.addMarker(marker, {
                 "type"    : type,
                 "subtype" : subtype
@@ -513,9 +516,6 @@ ClusterManager.prototype.addToCluster = function(marker, type, precision, geohas
     var cluster = clusters[precision][type];
     if (typeof geohash === "undefined") {
         geohash = this.getGeohash(markerLat, markerLng, precision);
-    if(geohash === undefined) {
-       console.log("hiereere");
-    }
     }
     if (typeof cluster[geohash] !== "undefined") {
         cluster[geohash]["markers"].push(marker);
@@ -714,7 +714,9 @@ ClusterManager.prototype.getMarkers = function(type, subtype, visible) {
         }
     }
     if (typeof visible === "undefined") return markers;
-    for (var i = 0, marker, final_markers = []; marker = markers[i]; i++) {
+
+    for (var i=0, final_markers=[], length=markers.length; i<length; i++) {
+        var marker = markers[i];
         var meta = this.getMarkerMeta(marker);
         if (visible === "all" || meta.hidden !== visible && meta.visible == visible && 
             typeof marker !== "function" && meta.type !== "cluster") {
@@ -773,7 +775,8 @@ ClusterManager.prototype.hide = function(type, subtype) {
 ClusterManager.prototype._showHide = function(type, subtype, hide) {
     var me = this;
     var markers = this.getMarkers(type, subtype);
-    for (var i = 0, marker; marker = markers[i]; i++) {
+    for(var i=0, length=markers.length; i<length; i++) { 
+        var marker = markers[i];
         this.getMarkerMeta(marker).hidden = hide;
     }
     if (this.ready_) this._lagUpdate(type);
@@ -836,7 +839,8 @@ ClusterManager.prototype.reset = function(type) {
  */
 ClusterManager.prototype.clear = function(type) {
     var markers = this.getMarkers(type);
-    for (var i=0, marker; marker = markers[i]; i++) {
+    for(var i=0, length=markers.length; i<length; i++) { 
+        var marker = markers[i];
         marker.setMap(null);
         this.getMarkerMeta(marker).visible = false;
     }
@@ -875,7 +879,8 @@ ClusterManager.prototype.updateMarkers = function() {
             if (this.boxInBounds(box, currentBounds, this.opts.padding)) {
                 if (cluster_box["cluster"]) {
                     if (!cluster_box_meta.hidden && !cluster_box_meta.visible) {
-                        for (var i = 0, marker; marker = cluster_box["markers"][i]; i++) {
+                        for(var i=0, length=cluster_box["markers"].length; i<length; i++) { 
+                            var marker = cluster_box["markers"][i];
                             this.getMarkerMeta(marker).visible = true;
                         }
                         cluster_box["cluster"].setMap(this.map);
@@ -899,7 +904,8 @@ ClusterManager.prototype.updateMarkers = function() {
                     if (cluster_box_meta.visible) this.cluster_meta[type]["count"]["visible"] -= 1;
                     cluster_box_meta.visible = false;
                 } else {
-                    for (var i = 0, marker; marker = cluster_box["markers"][i]; i++) {
+                    for(var i=0, length=cluster_box["markers"].length; i<length; i++) { 
+                        var marker = cluster_box["markers"][i];
                         var meta = this.getMarkerMeta(marker);
                         marker.setVisible(false);
                         if (meta.visible) this.cluster_meta[type]["count"]["visible"] -= 1;

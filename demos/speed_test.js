@@ -8,24 +8,25 @@ function $(element) {
   return document.getElementById(element) || null;
 }
 
+speedTest = {};
+
+speedTest.endProfile = function() {
+    if (window.console && $('firebugprofile').checked) { 
+      console.profileEnd(); 
+    }
+}
+
 //In MarkerClusterer, the clustering starts when onAdd is called, so we have to add the speed test code here or we're just testing how quickly
 //we can create a new MarkerCluster. Enable the profiler to see specifics.
 MarkerClusterer.prototype.onAddOld = MarkerClusterer.prototype.onAdd;
 
 MarkerClusterer.prototype.onAdd = function () {
-    if (window.console && $('firebugprofile').checked) { 
-        console.profile(); 
-    }
-    var start = new Date();
-    this.onAddOld();
+    this.onAddOld.apply(this, arguments);
     var end = new Date();
-    $('timetaken').innerHTML = end - start;
-    if (window.console && $('firebugprofile').checked) { 
-    console.profileEnd(); 
-    }
+    $('timetaken').innerHTML = end - speedTest.start;
+    speedTest.endProfile();
 };
 
-speedTest = {};
 
 speedTest.pics = null;
 speedTest.map = null;
@@ -175,19 +176,19 @@ speedTest.change = function() {
   speedTest.showMarkers();
 };
 
-
 speedTest.time = function() {
   $('timetaken').innerHTML = 'timing...';
   var clusterType = $('clustertype').value;
-  var start = new Date();
+  speedTest.start = new Date();
+  if(window.console && $('firebugprofile').checked) { 
+      console.profile(); 
+  }
 
   if (clusterType === 'markerclusterer' || clusterType === 'markerclustererplus') {
     speedTest.markerClusterer = new MarkerClusterer(speedTest.map, speedTest.markers);
     return;
   } else if (clusterType === 'clustermanager') {
-    if(window.console && $('firebugprofile').checked) { 
-        console.profile(); 
-    }
+
     speedTest.clusterMgr = new ClusterManager(speedTest.map, {
       markers    : speedTest.markers,
       precision  : 2,
@@ -195,15 +196,12 @@ speedTest.time = function() {
       });
     speedTest.clusterMgr.show();
   } else {
-    if(window.console && $('firebugprofile').checked) { 
-        console.profile(); 
-    }
     for (var i = 0, marker; marker = speedTest.markers[i]; i++) {
       marker.setMap(speedTest.map);
     }
   }
   var end = new Date();
-  $('timetaken').innerHTML = end - start;
+  $('timetaken').innerHTML = end - speedTest.start;
   if(window.console && $('firebugprofile').checked) { 
       console.profileEnd(); 
   }
