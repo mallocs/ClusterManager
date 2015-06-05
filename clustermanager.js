@@ -28,6 +28,68 @@
  * The function used to create the clusters is stored and this function can be overridden for 
  * greater control of the look and/or behavior of the clusters for each marker type.
  */
+
+LazyMarker = function(raw_marker) {
+  this.raw_marker = raw_marker;
+  if (typeof raw_marker.setMap === "function") {
+     this._marker = raw_marker;
+      return;
+  }
+  this._marker = null;
+}
+
+LazyMarker.prototype.setMap = function(map) {
+  if (this._marker) {
+    this._marker.setMap(map);
+    return;
+  }
+  if (!map) return; 
+    
+  var defaults = {
+        "title"   : this.raw_marker.title,
+        "type"    : false,
+        "subtype" : "",
+        "content" : ""
+  };
+  opts = ClusterManager.applyDefaults(defaults, this.raw_marker);
+    
+  this._marker = ClusterManager.prototype.createMarker({ title    : opts.title,
+                                                         type     : opts.type,
+                                                         content  : opts.content,
+                                                         position : new google.maps.LatLng(opts.latitutde,
+                                                                                           opts.longitude),
+                                                         subtype  : opts.subtype
+                                                        });   
+  
+  this._marker.setMap(map);
+}
+
+LazyMarker.prototype.getPosition = function() {
+    if (this._marker && this._marker.getPosition()) {
+        return this._marker.getPosition()
+    }
+    this.raw_marker.position = new google.maps.LatLng(opts.latitutde, opts.longitude);
+    return this.raw_marker.position;
+}
+
+LazyMarker.prototype.getLatLng = function() {
+    if (this._marker && typeof this.raw_marker.latitude === "undefined") {
+        this.raw_marker.position = this._marker.getPosition();
+        this.raw_marker.latitude = this.raw_marker.position.lat();
+        this.raw_marker.longitude = this.raw_marker.position.lng();
+    }
+    return { latitude: this.raw_marker.latitude,
+             longitude: this.raw_marker.longitude
+           };
+}
+
+LazyMarker.prototype.getTitle = function() {
+    return (this._marker && this._marker.getTitle()) || this.raw_marker.title;
+}
+
+LazyMarker.prototype.setVisible = function(visible) {
+  this._marker && this._marker.setVisible(visible);     
+}
  
 /***************************************************************************************************
  * Cluster Manager
@@ -446,8 +508,10 @@ ClusterManager.prototype.addMarkers = function(markers, type, subtype) {
  * @param {string} [opts.summary] The summary text that appears in the cluster's infowindow. 
  * Clicking on the text opens the markers infowindow.
  */
-ClusterManager.prototype.addMarker = function(marker, opts) {
+ClusterManager.prototype.addMarker = function(raw_marker, opts) {
     if (typeof opts === "undefined") opts = this.getMarkerMeta(marker);
+    
+    var marker = new LazyMarker(raw_marker);
     //Set when the marker is visible in the viewport and not hidden.
     //Set when we want to hide the marker even if it's in the viewport.
     var defaults = {
@@ -512,9 +576,9 @@ ClusterManager.prototype.count = function(type, count_type) {
  */
 ClusterManager.prototype.addToCluster = function(marker, type, precision, geohash) {
     var clusters = this.clusters;
-    var markerLL = marker.getPosition();
-    var markerLat = markerLL.lat();
-    var markerLng = markerLL.lng();
+    var markerLL = marker.getLatLng();
+    var markerLat = markerLL.latitude;
+    var markerLng = markerLL.longitude;
     if (typeof clusters[precision] === "undefined") {
         clusters[precision] = {};
     }
@@ -558,8 +622,8 @@ ClusterManager.prototype.removeFromCluster = function(marker, geohash) {
              test_marker = geoBox["markers"][i]; i++) {
             if (test_marker !== marker) {
                 new_markers.push(test_marker);
-                center_lat = center_lat + test_marker.getPosition().lat();
-                center_lng = center_lng + test_marker.getPosition().lng();
+                center_lat = center_lat + test_marker.getLatLng().latitude;
+                center_lng = center_lng + test_marker.getLatLng().longitude;
             }
         }
         center_lat = center_lat / new_markers.length;
@@ -1084,10 +1148,10 @@ ClusterManager.prototype.createMarkerIconOpts = function(opts) {
             icon_color = opts.icon_color;
         }
     //Then try the cluster manager options.
-    } else if (typeof opts.type !== "undefined" && typeof this.opts.icon_color === "object") {
+    } else if (typeof opts.type !== "undefined" && (this.opts && typeof this.opts.icon_color === "object")) {
         icon_color = this.opts.icon_color[opts.type] || "ff0000";
     } else {
-        icon_color = this.opts.icon_color || "ff0000";
+        icon_color = (this.opts && this.opts.icon_color) ? this.opts.icon_color : "ff0000";
     }
     if (typeof opts.strokeColor === "undefined") opts.strokeColor = "000000";
     if (typeof opts.cornerColor === "undefined") opts.cornerColor = "ffffff";

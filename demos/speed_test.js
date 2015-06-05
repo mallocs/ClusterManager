@@ -27,6 +27,7 @@ speedTest.profileEnd = function () {
 
 //In MarkerClusterer, the clustering starts when onAdd is called, so we have to add the speed test code here or we're just testing how quickly
 //we can create a new MarkerCluster. Enable the profiler to see specifics.
+
 var onAddOld = MarkerClusterer.prototype.onAdd;
 
 MarkerClusterer.prototype.onAdd = function () {
@@ -73,10 +74,20 @@ speedTest.showMarkers = function () {
         return;
     }
 
+    var bounds = speedTest.map.getBounds();
+    var southWest = bounds.getSouthWest();
+    var latSpan = bounds.toSpan().lat();
+    var lngSpan = bounds.toSpan().lng();
+    var swLatitude = southWest.lat();
+    var swLongitude = southWest.lng();
+
     for (var i = 0, marker; i < numMarkers; i++) {
         if (randomMarkers) {
-            var latLng = speedTest.getRandomLatLng();
-            marker = speedTest.makeMarker(latLng[0], latLng[1], {
+            var latLng = speedTest.getRandomLatLng(swLatitude, swLongitude, latSpan, lngSpan);
+            //marker = speedTest.makeMarker(latLng[0], latLng[1], {
+            marker = speedTest.makeMarkerData({
+                latitude: latLng[0], 
+                longitude: latLng[1], 
                 title: 'Marker ' + i
             });
         } else {
@@ -89,14 +100,19 @@ speedTest.showMarkers = function () {
     window.setTimeout(speedTest.time, 0);
 };
 
-speedTest.getRandomLatLng = function () {
-    var bounds = speedTest.map.getBounds();
-    var southWest = bounds.getSouthWest();
-    var latSpan = bounds.toSpan().lat();
-    var lngSpan = bounds.toSpan().lng();
-    var lat = (southWest.lat() + latSpan * Math.random()) % 90;
-    var lng = (southWest.lng() + lngSpan * Math.random()) % 180;
-    return [lat, lng];
+
+speedTest.getRandomLatLng = function(swLatitude, swLongitude, latSpan, lngSpan) {
+
+    return [(swLatitude + latSpan * Math.random()) % 90, 
+            (swLongitude + lngSpan * Math.random()) % 180];
+};
+
+speedTest.makeMarkerData = function(opts) {
+  return {"content"   : "Marker",
+          "title"     : opts.photo_title || opts.title || 'No title',
+          "latitude"  : opts.latitude,
+          "longitude" : opts.longitude
+         };
 };
 
 speedTest.makeMarker = function (lat, lng, opts) {
@@ -169,10 +185,11 @@ speedTest.markerClickFunction = function (opts, latlng) {
 
 speedTest.clear = function () {
     $('timetaken').innerHTML = ' ... ';
-    for (var i = 0, marker; marker = speedTest.markers[i]; i++) {
-        marker.setMap(null);
-    }
+
     if (speedTest.markerClusterer) {
+        for (var i = 0, marker; marker = speedTest.markers[i]; i++) {
+            marker.setMap(null);
+        }
         speedTest.markerClusterer.clearMarkers();
     }
     if (speedTest.clusterMgr) {
