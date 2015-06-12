@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Complex Cluster Manager Demo - Types and Subtypes</title>
+    <style type="text/css">
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial;
+        font-size: 14px;
+      }
+
+      .info {
+        width: 200px;
+      }
+
+      .info img {
+        border: 0;
+      }
+
+      .info-body {
+        width: 200px;
+        height: 200px;
+        line-height: 200px;
+        margin: 2px 0;
+        text-align: center;
+        overflow: hidden;
+      }
+
+      .info-img {
+        height: 220px;
+        width: 200px;
+      }
+    </style>
+
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
+
+                
+  <script type="text/javascript" src="../dist/clustermanager.min.js"></script>
+
+      
+  <script type="text/javascript" src="./data.json"></script>
+
+  <script type="text/javascript">
+
+    function $(element) {
+        return document.getElementById(element) || null;
+    }
+    var clusterDemo = {};
+
+    clusterDemo.infoWindow = new google.maps.InfoWindow();
+
+    clusterDemo.init = function() {
+        $('show_odd_markers').checked = true;
+        $('show_even_markers').checked = true;
+        $('show_other_markers').checked = true;
+
+        var map = new google.maps.Map($('map_canvas'), { zoom   : 5,
+                                                     center : new google.maps.LatLng(36.7782, -119.4179)});
+        clusterDemo.map = map;
+
+        var cluster_mgr = new ClusterManager(map, {icon_color: {"demo": "FF0000", "other": "0070FF"}});
+        clusterDemo.cluster_mgr = cluster_mgr;
+
+        for (var i=0, pic; pic=data.photos[i]; i++) {
+          var subtype = i%2 === 0 ? "even":"odd"
+          //you can create your own markers or use the manager to create them.
+          var marker = cluster_mgr.createMarker({ title    : "Marker " + i + ": " + subtype,
+                                                  type     : "demo",
+                                                  content  : "Marker " + i + ": " + subtype,
+                                                  position : new google.maps.LatLng(pic.latitude, pic.longitude),
+                                                  subtype  : subtype
+                                                 });
+          cluster_mgr.addMarker(marker);
+        }
+
+        for(var i=0, otherMarkers=[], pic; pic=data.photos[i]; i++) {
+            var newLat = (pic.latitude*i)%180 - 90;
+            var newLng = (pic.longitude*i)%360 - 180;
+            var marker = clusterDemo.makeMarker(newLat, newLng, pic);
+            otherMarkers.push(marker);
+        }
+
+        cluster_mgr.addMarkers(otherMarkers, "other");
+        cluster_mgr.show();
+    };
+
+    clusterDemo.showHide = function(el, type, subtype) {
+        var CM = clusterDemo.cluster_mgr;
+        if(typeof subtype !== "undefined" && typeof type !== "undefined") {
+            if(el.checked) CM.show(type, subtype);
+            else CM.hide(type, subtype);
+        } else if(typeof type !== "undefined") {
+            if(el.checked) CM.show(type, "generic");
+            else CM.hide(type, "generic");
+        }
+    };
+
+    clusterDemo.makeMarker = function(lat, lng, opts) {
+        var latLng = new google.maps.LatLng(lat, lng);
+ 
+        var imageUrl = 'http://chart.apis.google.com/chart?cht=mm&chs=24x32&chco=' +
+            'FFFFFF,008CFF,000000&ext=.png';
+        var markerImage = new google.maps.MarkerImage(imageUrl,
+            new google.maps.Size(24, 32));
+
+        var marker = new google.maps.Marker({
+          position : latLng,
+          icon     : markerImage,
+          title    : opts.photo_title || opts.title
+        });
+
+        var fn = clusterDemo.markerClickFunction(opts, latLng);
+        google.maps.event.addListener(marker, 'click', fn);
+        return marker;
+    };
+
+    clusterDemo.markerClickFunction = function(opts, latlng) {
+      return function(e) {
+
+        e.cancelBubble = true;
+        e.returnValue = false;
+        if(e.stopPropagation) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+        var title = opts.photo_title || opts.title || 'No title';
+
+        if(opts.photo_url) {
+          var url = opts.photo_url || '';
+          var fileurl = opts.photo_file_url || '';
+          var ownerurl = opts.owner_url || '';
+          var ownername = opts.owner_name || '';
+
+          var infoHtml = '<div class="info"><h3>' + title +
+            '</h3><div class="info-body">' +
+            '<a href="' + url + '" target="_blank"><img src="' +
+            fileurl + '" class="info-img"/></a></div>' +
+            '<a href="http://www.panoramio.com/" target="_blank">' +
+            '<img src="http://maps.google.com/intl/en_ALL/mapfiles/' +
+            'iw_panoramio.png"/></a><br/>' +
+            '<a href="' + ownerurl + '" target="_blank">' + ownername +
+            '</a></div></div>';
+        } else {
+          var infoHtml = '<div class="info"><h3>' + title + '</h3></div>';
+        }
+
+        clusterDemo.infoWindow.setContent(infoHtml);
+        clusterDemo.infoWindow.setPosition(latlng);
+        var now = new Date();
+        clusterDemo.infoWindow.setZIndex(now.getTime());
+        clusterDemo.infoWindow.open(clusterDemo.map);
+      };
+    };
+  </script>
+
+  <script type="text/javascript">
+    google.maps.event.addDomListener(window, 'load', clusterDemo.init);
+  </script>
+
+  </head>
+  <body>
+  <body>
+    <h3>Complex Cluster Manager Demo - Types and Subtypes</h3>
+    <div id="map_canvas" style="width: 1000px; height: 500px"></div>
+    <input type="checkbox" checked=true id="show_odd_markers" onclick='clusterDemo.showHide(this, "demo", "odd");'>Show odd markers</input>
+    <input type="checkbox" checked=true id="show_even_markers" onclick='clusterDemo.showHide(this, "demo", "even");'>Show even markers</input>
+    <input type="checkbox" checked=true id="show_other_markers" onclick='clusterDemo.showHide(this, "other");'>Show other markers</input>
+  </body>
+</html>

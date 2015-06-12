@@ -3,6 +3,7 @@
 * http://www.mallocs.net
 ****/  
 
+
 /************************************************************************************************
  * Cluster Manager
  ************************************************************************************************/
@@ -28,72 +29,20 @@
  * The function used to create the clusters is stored and this function can be overridden for 
  * greater control of the look and/or behavior of the clusters for each marker type.
  */
-
-LazyMarker = function(raw_marker) {
-  this.raw_marker = raw_marker;
-  if (typeof raw_marker.setMap === "function") {
-     this._marker = raw_marker;
-      return;
-  }
-  this._marker = null;
-}
-
-LazyMarker.prototype.setMap = function(map) {
-  if (this._marker) {
-    this._marker.setMap(map);
-    return;
-  }
-  if (!map) return; 
-    
-  var defaults = {
-        "title"   : this.raw_marker.title,
-        "type"    : false,
-        "subtype" : "",
-        "content" : ""
-  };
-  opts = ClusterManager.applyDefaults(defaults, this.raw_marker);
-    
-  this._marker = ClusterManager.prototype.createMarker({ title    : opts.title,
-                                                         type     : opts.type,
-                                                         content  : opts.content,
-                                                         position : new google.maps.LatLng(opts.latitutde,
-                                                                                           opts.longitude),
-                                                         subtype  : opts.subtype
-                                                        });   
-  
-  this._marker.setMap(map);
-}
-
-LazyMarker.prototype.getPosition = function() {
-    if (this._marker && this._marker.getPosition()) {
-        return this._marker.getPosition()
-    }
-    this.raw_marker.position = new google.maps.LatLng(opts.latitutde, opts.longitude);
-    return this.raw_marker.position;
-}
-
-LazyMarker.prototype.getLatLng = function() {
-    if (this._marker && typeof this.raw_marker.latitude === "undefined") {
-        this.raw_marker.position = this._marker.getPosition();
-        this.raw_marker.latitude = this.raw_marker.position.lat();
-        this.raw_marker.longitude = this.raw_marker.position.lng();
-    }
-    return { latitude: this.raw_marker.latitude,
-             longitude: this.raw_marker.longitude
-           };
-}
-
-LazyMarker.prototype.getTitle = function() {
-    return (this._marker && this._marker.getTitle()) || this.raw_marker.title;
-}
-
-LazyMarker.prototype.setVisible = function(visible) {
-  this._marker && this._marker.setVisible(visible);     
-}
  
 /***************************************************************************************************
  * Cluster Manager
  **************************************************************************************************/
+
+'use strict';
+
+//var LazyMarker = window.LazyMarker;
+//var applyDefaults = require("./utils");
+//var LazyMarker = require("./LazyMarker");
+import applyDefaults from "./utils";
+import LazyMarker from "./LazyMarker"; 
+
+window.ClusterManager = ClusterManager || {};
 
 /**
  * Creates a new Cluster Manager for clustering markers on a V3 Google map.
@@ -118,7 +67,10 @@ LazyMarker.prototype.setVisible = function(visible) {
  * this distance: cluster_distance_factor*Math.pow(2, -precision+2)
  * @constructor
  */
-ClusterManager = function(map, opts) {
+
+
+     
+function ClusterManager(map, opts) {
     var me = this;
     opts = opts || {};
     this.map = map;
@@ -139,7 +91,7 @@ ClusterManager = function(map, opts) {
         me._onMapMoveEnd();
     });
     if (typeof opts.markers !== "undefined") this.addMarkers(opts.markers);
-};
+}
 
 ClusterManager.prototype = new google.maps.OverlayView();
 /**
@@ -183,7 +135,7 @@ ClusterManager.prototype.resetManager = function(opts) {
     this.cluster_fns = {}; //store cluster function for building the cluster markers.
     this.cluster_meta = {}; //marker counts, etc
     var precision = opts.precision >= 0 && opts.precision <= 27 ? opts.precision:2;
-    opts = ClusterManager.applyDefaults({
+    opts = applyDefaults({
         padding                 : 200,
         visualize               : false,
         zoom_to_precision       : function(zoom_level) {
@@ -412,7 +364,7 @@ ClusterManager.prototype.getNeighborBoxes = function(box_str, type) {
  * @returns {google.maps.Polygon} A polygon covering the box's bounds.
  */
 ClusterManager.prototype.boxToPolygon = function(geohash, opts) {
-    opts = ClusterManager.applyDefaults({
+    opts = applyDefaults({
         map           : this.map,
         strokeColor   : "#f33f00",
         strokeWeight  : 5,
@@ -509,9 +461,10 @@ ClusterManager.prototype.addMarkers = function(markers, type, subtype) {
  * Clicking on the text opens the markers infowindow.
  */
 ClusterManager.prototype.addMarker = function(raw_marker, opts) {
-    if (typeof opts === "undefined") opts = this.getMarkerMeta(marker);
-    
+    if (typeof opts === "undefined") opts = this.getMarkerMeta(raw_marker);
+
     var marker = new LazyMarker(raw_marker);
+    
     //Set when the marker is visible in the viewport and not hidden.
     //Set when we want to hide the marker even if it's in the viewport.
     var defaults = {
@@ -520,7 +473,7 @@ ClusterManager.prototype.addMarker = function(raw_marker, opts) {
         hidden  : true,
         visible : false
     };
-    opts = ClusterManager.applyDefaults(defaults, opts);
+    opts = applyDefaults(defaults, opts);
     var type = opts.type,
         subtype = opts.subtype;
     //if this is the first marker of the type, save the cluster function.
@@ -1016,8 +969,8 @@ ClusterManager.prototype.setClusterFn = function(type, fn) {
  * @param {object} meta
  */
 ClusterManager.prototype.setMarkerMeta = function(marker, meta) {
-    var defaults = ClusterManager.applyDefaults(meta, marker._cluster_meta);
-    marker._cluster_meta = ClusterManager.applyDefaults(defaults, meta);
+    var defaults = applyDefaults(meta, marker._cluster_meta);
+    marker._cluster_meta = applyDefaults(defaults, meta);
 };
 
 /**
@@ -1160,7 +1113,7 @@ ClusterManager.prototype.createMarkerIconOpts = function(opts) {
                  opts.cornerColor.replace("#", "") + "," + icon_color + "," +
                  opts.strokeColor.replace("#", "") + "&ext=.png";
 
-    return ClusterManager.applyDefaults({
+    return applyDefaults({
         url    : iconUrl,
         size   : new google.maps.Size(width, height),
         origin : new google.maps.Point(0, 0),
@@ -1190,7 +1143,7 @@ ClusterManager.prototype.createMarker = function(opts) {
         "icon"    : defaultIconOpts,
         "content" : "Marker"
     };
-    opts = ClusterManager.applyDefaults(defaults, opts);
+    opts = applyDefaults(defaults, opts);
     var marker = new google.maps.Marker(opts);
     if (typeof opts.fn === "undefined") {
         var iw = new google.maps.InfoWindow({
@@ -1208,22 +1161,6 @@ ClusterManager.prototype.createMarker = function(opts) {
     return marker;
 };
 
-/**
- * Tool for applying defaults. Any property in defaults will be overwritten by a corresponding
- * property in opts. If the property does not exist, the default remains. Only properties in 
- * defaults will be included in the final object.
- * 
- * @param {object} [defaults]
- * @param {object} [opts]
- * @returns {object} 
- */
-ClusterManager.applyDefaults = function(defaults, opts) {
-    if (typeof defaults !== "object") return {};
-    if (typeof opts !== "object") return defaults;
-    for (var index in defaults) {
-        if (typeof opts[index] === "undefined") {
-            opts[index] = defaults[index];
-        }
-    }
-    return opts;
-};
+
+
+//export default ClusterManager;
