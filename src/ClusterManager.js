@@ -39,7 +39,7 @@
 //var LazyMarker = window.LazyMarker;
 //var applyDefaults = require("./utils");
 //var LazyMarker = require("./LazyMarker");
-import applyDefaults from "./utils";
+import {applyDefaults, createMarkerIconOpts, createMarker, setMarkerMeta, getMarkerMeta} from "./utils";
 import LazyMarker from "./LazyMarker"; 
 
 window.ClusterManager = ClusterManager || {};
@@ -165,8 +165,8 @@ ClusterManager.prototype.setPrecision = function(precision) {
         var markers = this.getMarkers();
         for(var i=0, length=markers.length; i<length; i++) { 
             var marker = markers[i];
-            if (this.getMarkerMeta(marker).subtype !== "cluster") {
-                this.addToCluster(marker, this.getMarkerMeta(marker).type, precision);
+            if (getMarkerMeta(marker).subtype !== "cluster") {
+                this.addToCluster(marker, getMarkerMeta(marker).type, precision);
             }
         }
     }
@@ -461,7 +461,7 @@ ClusterManager.prototype.addMarkers = function(markers, type, subtype) {
  * Clicking on the text opens the markers infowindow.
  */
 ClusterManager.prototype.addMarker = function(raw_marker, opts) {
-    if (typeof opts === "undefined") opts = this.getMarkerMeta(raw_marker);
+    if (typeof opts === "undefined") opts = getMarkerMeta(raw_marker);
 
     var marker = new LazyMarker(raw_marker);
     
@@ -504,7 +504,7 @@ ClusterManager.prototype.addMarker = function(raw_marker, opts) {
         opts.summary = typeof marker.getTitle() === "undefined" ? capType + " marker " +
                        this.count(opts.type, "total") : marker.getTitle();
     }
-    this.setMarkerMeta(marker, opts);
+    setMarkerMeta(marker, opts);
 };
 
 /**
@@ -566,7 +566,7 @@ ClusterManager.prototype.addToCluster = function(marker, type, precision, geohas
  */
 ClusterManager.prototype.removeFromCluster = function(marker, geohash) {
     var precision = this.geohashGetPrecision(geohash);
-    var type = this.getMarkerMeta(marker).type;
+    var type = getMarkerMeta(marker).type;
     var geoBox = this.clusters[precision][type][geohash];
     if (geoBox["markers"].length === 1) {
         delete(this.clusters[precision][type][geohash]);
@@ -692,7 +692,7 @@ ClusterManager.prototype.cluster = function(type) {
         if (this.opts.visualize) this.boxToPolygon(boxStr).setMap(this.map);
         var cluster = clusters[precision][type][boxStr];
         for (i = 0, cluster_markers = []; marker = cluster["markers"][i]; i++) {
-            var meta = this.getMarkerMeta(marker);
+            var meta = getMarkerMeta(marker);
             if (typeof meta.hidden === "undefined" || !meta.hidden) {
                 cluster_markers.push(marker);
             }
@@ -746,7 +746,7 @@ ClusterManager.prototype.getMarkers = function(type, subtype, visible) {
 
     for (var i=0, final_markers=[], length=markers.length; i<length; i++) {
         var marker = markers[i];
-        var meta = this.getMarkerMeta(marker);
+        var meta = getMarkerMeta(marker);
         if (visible === "all" || meta.hidden !== visible && meta.visible === visible && 
             typeof marker !== "function" && meta.type !== "cluster") {
             final_markers.push(marker);
@@ -806,7 +806,7 @@ ClusterManager.prototype._showHide = function(type, subtype, hide) {
     var markers = this.getMarkers(type, subtype);
     for(var i=0, length=markers.length; i<length; i++) { 
         var marker = markers[i];
-        this.getMarkerMeta(marker).hidden = hide;
+        getMarkerMeta(marker).hidden = hide;
     }
     if (this.ready_) this._lagUpdate(type);
     else {
@@ -871,7 +871,7 @@ ClusterManager.prototype.clear = function(type) {
     for(var i=0, length=markers.length; i<length; i++) { 
         var marker = markers[i];
         marker.setMap(null);
-        this.getMarkerMeta(marker).visible = false;
+        getMarkerMeta(marker).visible = false;
     }
     if (typeof type !== "undefined" && this.cluster_meta && this.cluster_meta[type]) {
         this.cluster_meta[type]["count"]["visible"] = 0;
@@ -908,13 +908,13 @@ ClusterManager.prototype.updateMarkers = function() {
         var type_cluster = cluster[type];
         for (var box in type_cluster) {
             var cluster_box = type_cluster[box];
-            var cluster_box_meta = this.getMarkerMeta(cluster_box["cluster"]);
+            var cluster_box_meta = getMarkerMeta(cluster_box["cluster"]);
             if (this.boxInBounds(box, currentBounds, this.opts.padding)) {
                 if (cluster_box["cluster"]) {
                     if (!cluster_box_meta.hidden && !cluster_box_meta.visible) {
                         for(i=0, length=cluster_box["markers"].length; i<length; i++) { 
                             marker = cluster_box["markers"][i];
-                            this.getMarkerMeta(marker).visible = true;
+                            getMarkerMeta(marker).visible = true;
                         }
                         cluster_box["cluster"].setMap(this.map);
                         cluster_box["cluster"].setVisible(true);
@@ -923,7 +923,7 @@ ClusterManager.prototype.updateMarkers = function() {
                     }
                 } else {
                     marker = cluster_box["markers"][0];
-                    meta = this.getMarkerMeta(marker);
+                    meta = getMarkerMeta(marker);
                     if (!meta.hidden && !meta.visible) {
                         marker.setMap(this.map);
                         marker.setVisible(true);
@@ -939,7 +939,7 @@ ClusterManager.prototype.updateMarkers = function() {
                 } else {
                     for(i=0, length=cluster_box["markers"].length; i<length; i++) { 
                         marker = cluster_box["markers"][i];
-                        meta = this.getMarkerMeta(marker);
+                        meta = getMarkerMeta(marker);
                         marker.setVisible(false);
                         if (meta.visible) this.cluster_meta[type]["count"]["visible"] -= 1;
                         meta.visible = false;
@@ -960,32 +960,6 @@ ClusterManager.prototype.updateMarkers = function() {
  */
 ClusterManager.prototype.setClusterFn = function(type, fn) {
     this.cluster_fns[type] = fn;
-};
-
-/**
- * Sets a marker's meta properties. Properties already set are treated as defaults.
- * 
- * @param {google.maps.Marker} marker
- * @param {object} meta
- */
-ClusterManager.prototype.setMarkerMeta = function(marker, meta) {
-    var defaults = applyDefaults(meta, marker._cluster_meta);
-    marker._cluster_meta = applyDefaults(defaults, meta);
-};
-
-/**
- * Gets a marker's meta properties.
- * 
- * @param {google.maps.Marker} marker
- * @returns {object} The object with extra data about the marker.
- */
-ClusterManager.prototype.getMarkerMeta = function(marker) {
-    try {
-        return marker._cluster_meta;
-    } catch (err) {
-        marker._cluster_meta = {};
-        return marker._cluster_meta;
-    }
 };
 
 /**
@@ -1046,7 +1020,7 @@ ClusterManager.prototype.createClusterMarker = function(marker_list, center_lat,
     }
     for (var i = 0, marker; marker = marker_list[i]; i++) {
         var markerSpan = document.createElement("span");
-        markerSpan.innerHTML = '<b>' + manager.getMarkerMeta(marker).summary + '</b><br>';
+        markerSpan.innerHTML = '<b>' + getMarkerMeta(marker).summary + '</b><br>';
         markerSpan.onclick = markerClickClosure(marker);
         markerSpan.style.color = "#334499";
         markerSpan.style.cursor = "pointer";
@@ -1057,7 +1031,7 @@ ClusterManager.prototype.createClusterMarker = function(marker_list, center_lat,
         htmlEl.appendChild(document.createTextNode((marker_list.length - 10) + 
                            " more markers in this area. Zoom in for details."));
     }
-    var icon_color = manager.opts.icon_color[manager.getMarkerMeta(marker_list[0]).type] || 
+    var icon_color = manager.opts.icon_color[getMarkerMeta(marker_list[0]).type] || 
                                                                    manager.opts.icon_color;
     var icon = manager.createClusterIcon(marker_list.length, manager.getPrecision(), icon_color);
     marker = manager.createMarker({
@@ -1087,38 +1061,17 @@ ClusterManager.prototype.createClusterMarker = function(marker_list, center_lat,
  */
 ClusterManager.prototype.createMarkerIconOpts = function(opts) {
     if (typeof opts === "undefined") opts = {};
-    if (typeof opts.width === "undefined") opts.width = 32;
-    if (typeof opts.height === "undefined") opts.height = 32;
-    var width = opts.width,
-        height = opts.height;
-    //Set the icon color.
-    //First check the options.
-    var icon_color;
-    if (typeof opts.icon_color !== "undefined") {
-        if (typeof opts.icon_color === "object" && typeof opts.type !== "undefined") {
-            icon_color = opts.icon_color[opts.type] || "ff0000";
-        } else {
-            icon_color = opts.icon_color;
+    
+    var default_icon_color = "ff0000";
+    if (typeof this.opts !== "undefined" && typeof this.opts.icon_color !== "undefined") {
+        if (typeof this.opts.icon_color === "string") {
+            default_icon_color = this.opts.icon_color;
+        } else if (typeof this.opts.icon_color === "object" && typeof opts.type !== "undefined" && typeof this.opts.icon_color[opts.type] === "string") {
+            default_icon_color = this.opts.icon_color[opts.type];
         }
-    //Then try the cluster manager options.
-    } else if (typeof opts.type !== "undefined" && (this.opts && typeof this.opts.icon_color === "object")) {
-        icon_color = this.opts.icon_color[opts.type] || "ff0000";
-    } else {
-        icon_color = (this.opts && this.opts.icon_color) ? this.opts.icon_color : "ff0000";
-    }
-    if (typeof opts.strokeColor === "undefined") opts.strokeColor = "000000";
-    if (typeof opts.cornerColor === "undefined") opts.cornerColor = "ffffff";
-    var baseUrl = "http://chart.apis.google.com/chart?cht=mm";
-    var iconUrl = baseUrl + "&chs=" + width + "x" + height + "&chco=" +
-                 opts.cornerColor.replace("#", "") + "," + icon_color + "," +
-                 opts.strokeColor.replace("#", "") + "&ext=.png";
+    } 
 
-    return applyDefaults({
-        url    : iconUrl,
-        size   : new google.maps.Size(width, height),
-        origin : new google.maps.Point(0, 0),
-        anchor : new google.maps.Point(width/2, height)
-    }, opts);
+    return createMarkerIconOpts(applyDefaults({icon_color: default_icon_color}, opts));
 };
 
 /**
@@ -1135,30 +1088,8 @@ ClusterManager.prototype.createMarkerIconOpts = function(opts) {
  * determines the content of the infowindow displayed when the marker is clicked.
  */
 ClusterManager.prototype.createMarker = function(opts) {
-    var me = this;
-    var defaultIconOpts = this.createMarkerIconOpts(opts);
-    var defaults = {
-        "map"     : this.map,
-        "visible" : false,
-        "icon"    : defaultIconOpts,
-        "content" : "Marker"
-    };
-    opts = applyDefaults(defaults, opts);
-    var marker = new google.maps.Marker(opts);
-    if (typeof opts.fn === "undefined") {
-        var iw = new google.maps.InfoWindow({
-            content: opts.content
-        });
-        google.maps.event.addListener(marker, 'click', function() {
-            var now = new Date();
-            iw.setZIndex(now.getTime());
-            iw.open(me.map, marker);
-        });
-    } else {
-        google.maps.event.addListener(marker, 'click', opts.fn);
-    }
-    this.setMarkerMeta(marker, opts);
-    return marker;
+    return createMarker(this.map, 
+                        applyDefaults({icon: this.createMarkerIconOpts(opts)}, opts));
 };
 
 
