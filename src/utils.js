@@ -19,33 +19,7 @@
     }
     return opts;
 }
-     
-/**
- * Sets a marker's meta properties. Properties already set are treated as defaults.
- * 
- * @param {google.maps.Marker} marker
- * @param {object} meta
- */
-export function setMarkerMeta(marker, meta) {
-    var defaults = applyDefaults(meta, marker._cluster_meta);
-    marker._cluster_meta = applyDefaults(defaults, meta);
-}   
-
-/**
- * Gets a marker's meta properties.
- * 
- * @param {google.maps.Marker} marker
- * @returns {object} The object with extra data about the marker.
- */
- export function getMarkerMeta(marker) {
-    try {
-        return marker._cluster_meta;
-    } catch (err) {
-        marker._cluster_meta = {};
-        return marker._cluster_meta;
-    }
-}
-
+ 
 /**
  * A free function for creating marker icon opts.
  * 
@@ -96,6 +70,14 @@ export function createMarkerIconOpts(opts) {
     }, opts);
 }
 
+export function createMarkerData(opts) {
+
+    return applyDefaults({
+        icon: createMarkerIconOpts(opts),
+        visible : false,
+        content : "Marker"
+    }, opts);  
+}
 
 /**
  * A free function for creating markers. In addition to the parameters below, you can pass any 
@@ -110,28 +92,25 @@ export function createMarkerIconOpts(opts) {
  * @param {string} [opts.content="Marker"] If the marker does not have opts.fn defined, this 
  * determines the content of the infowindow displayed when the marker is clicked.
  */
- export function createMarker(map, opts) {
-    var defaults = {
-        map     : map,
-        visible : false,
-        icon    : createMarkerIconOpts(opts),
-        content : "Marker"
-    };
-    opts = applyDefaults(defaults, opts);
+ export function createMarker(opts) {
+
     var marker = new google.maps.Marker(opts);
     if (typeof opts.fn === "undefined") {
         var iw = new google.maps.InfoWindow({
             content: opts.content
         });
-        google.maps.event.addListener(marker, 'click', function() {
+        google.maps.event.addListener(marker, "click", function() {
+            console.log("click");
+            console.log(opts);
+            console.log(marker);
             var now = new Date();
             iw.setZIndex(now.getTime());
-            iw.open(map, marker);
+            iw.open(opts.map, marker);
         });
     } else {
-        google.maps.event.addListener(marker, 'click', opts.fn);
+        google.maps.event.addListener(marker, "click", opts.fn);
     }
-    setMarkerMeta(marker, opts);
+ //   setMarkerMeta(marker, opts);
     return marker;
 }
  

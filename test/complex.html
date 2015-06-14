@@ -68,9 +68,11 @@
         for (var i=0, pic; pic=data.photos[i]; i++) {
           var subtype = i%2 === 0 ? "even":"odd"
           //you can create your own markers or use the manager to create them.
-          var marker = cluster_mgr.createMarker({ title    : "Marker " + i + ": " + subtype,
+          var marker = cluster_mgr.createMarkerData({ title    : "Marker " + i + ": " + subtype,
                                                   type     : "demo",
                                                   content  : "Marker " + i + ": " + subtype,
+                                                  latitude: pic.latitude,
+                                                  longitude: pic.longitude,
                                                   position : new google.maps.LatLng(pic.latitude, pic.longitude),
                                                   subtype  : subtype
                                                  });

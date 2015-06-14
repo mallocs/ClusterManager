@@ -1,19 +1,20 @@
-'use strict';
-import applyDefaults from './utils';
-
-//var applyDefaults = require('./utils');
+"use strict";
+import {applyDefaults, createMarker} from "./utils";
 
 function LazyMarker(raw_marker) {
+    if (raw_marker.constructor === LazyMarker) return raw_marker;
     this.raw_marker = raw_marker;
+    
     if (typeof raw_marker.setMap === "function") {
         this._marker = raw_marker;
     } else {
         this._marker = null;
+//        setMarkerMeta(this, raw_marker);
     }
     google.maps.event.addListener(this, "click", function (e) {
-        if (this._marker) {
-            google.maps.event.trigger(this._marker, "click", e);
-        }
+        //marker hasn't been added to the map yet, so not visible
+        if (!this._marker) this._marker = createMarker(applyDefaults(this.raw_marker, {visible: false}));
+        google.maps.event.trigger(this._marker, "click", e);
     });
 }
 
@@ -25,6 +26,7 @@ LazyMarker.prototype.setMap = function (map) {
     if (!map) return;
 
     var defaults = {
+        map: map,
         title: this.raw_marker.title,
         type: false,
         subtype: "",
@@ -32,7 +34,9 @@ LazyMarker.prototype.setMap = function (map) {
     };
     var opts = applyDefaults(defaults, this.raw_marker);
 
-    this._marker = ClusterManager.prototype.createMarker({
+    //TODO: which createMarker
+    /*
+    this._marker = createMarker({
         title: opts.title,
         type: opts.type,
         content: opts.content,
@@ -40,7 +44,8 @@ LazyMarker.prototype.setMap = function (map) {
                                         opts.longitude),
         subtype: opts.subtype
     });
-
+    */
+    this._marker = createMarker(opts);
     this._marker.setMap(map);
 };
 
@@ -73,6 +78,4 @@ LazyMarker.prototype.setVisible = function (visible) {
     this._marker && this._marker.setVisible(visible);
 };
 
-//module.exports = LazyMarker;
 export default LazyMarker;
-//window.LazyMarker = LazyMarker;
