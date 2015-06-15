@@ -28,11 +28,13 @@ speedTest.profileEnd = function () {
 //In MarkerClusterer, the clustering starts when onAdd is called, so we have to add the speed test code here or we're just testing how quickly
 //we can create a new MarkerCluster. Enable the profiler to see specifics.
 
-var onAddOld = MarkerClusterer.prototype.onAdd;
+//var onAddOld = MarkerClusterer.prototype.onAdd;
+MarkerClusterer.prototype.onAddOld = MarkerClusterer.prototype.onAdd;
 
 MarkerClusterer.prototype.onAdd = function () {
-    speedTest.profileStart();
-    onAddOld.apply(this, arguments);
+    this.onAddOld.apply(this, arguments);
+    var end = new Date();
+    $('timetaken').innerHTML = end - speedTest.start;
     speedTest.profileEnd();
 };
 
@@ -45,9 +47,9 @@ speedTest.infoWindow = null;
 speedTest.markers = [];
 
 speedTest.init = function () {
-    var latlng = new google.maps.LatLng(39.91, 116.38);
+    var latlng = new google.maps.LatLng(43.32, -1.98);
     var options = {
-        'zoom': 2,
+        'zoom': 8,
         'center': latlng,
         'mapTypeId': google.maps.MapTypeId.ROADMAP
     };
@@ -68,6 +70,8 @@ speedTest.showMarkers = function () {
     panel.innerHTML = '';
     var numMarkers = $('nummarkers').value;
     var randomMarkers = $('randommarkers').checked;
+    var lazyMarkers = $('lazymarkers').checked;
+
 
     if (numMarkers > 1093 && !randomMarkers) {
         alert('Sorry, only 1093 nonrandom markers. Check the "Random" box to input unlimited markers.');
@@ -82,37 +86,53 @@ speedTest.showMarkers = function () {
     var swLongitude = southWest.lng();
 
     for (var i = 0, marker; i < numMarkers; i++) {
-        if (randomMarkers) {
+        if (randomMarkers) {            
             var latLng = speedTest.getRandomLatLng(swLatitude, swLongitude, latSpan, lngSpan);
-            //marker = speedTest.makeMarker(latLng[0], latLng[1], {
-            marker = speedTest.makeMarkerData({
-                latitude: latLng[0], 
-                longitude: latLng[1], 
-                title: 'Marker ' + i
-            });
+            if (lazyMarkers && $('clustertype').value === 'clustermanager') {
+                marker = {
+                    map: speedTest.map,
+                    icon: speedTest.makeMarkerImage(),
+                    latitude: latLng[0], 
+                    longitude: latLng[1], 
+                    content: 'Marker ' + i,
+                    title: 'Marker ' + i
+                };                
+            } else {
+                marker = speedTest.makeMarker(latLng[0], latLng[1], {
+                    latitude: latLng[0], 
+                    longitude: latLng[1], 
+                    title: 'Marker ' + i
+                });
+            }
         } else {
-            var pic = speedTest.pics[i];
-            marker = speedTest.makeMarker(pic.latitude, pic.longitude, pic);
+       //     if (lazyMarkers) {
+        //        var pic = speedTest.pics[i];
+        //        marker = speedTest.makeMarkerData(pic.latitude, pic.longitude, pic);                
+        //    } else {
+                var pic = speedTest.pics[i];
+                marker = speedTest.makeMarker(pic.latitude, pic.longitude, pic);
+        //    }
         }
         speedTest.markers.push(marker);
     }
-
     window.setTimeout(speedTest.time, 0);
 };
 
 
 speedTest.getRandomLatLng = function(swLatitude, swLongitude, latSpan, lngSpan) {
-
-    return [(swLatitude + latSpan * Math.random()) % 90, 
-            (swLongitude + lngSpan * Math.random()) % 180];
+    var random1 = Math.random();
+    var random2 = Math.random();
+    return [((swLatitude + (random1*latSpan)) ) % 90 , 
+            (180 + swLongitude + (random2*lngSpan)) % 360 - 180];
+    return [((swLatitude - latSpan + (3*random1*latSpan)) ) % 90 , 
+            (180 + swLongitude - lngSpan + (3*random2*lngSpan)) % 360 - 180];
 };
 
-speedTest.makeMarkerData = function(opts) {
-  return {"content"   : "Marker",
-          "title"     : opts.photo_title || opts.title || 'No title',
-          "latitude"  : opts.latitude,
-          "longitude" : opts.longitude
-         };
+speedTest.makeMarkerImage = function (opts) {
+    var imageUrl = 'http://chart.apis.google.com/chart?cht=mm&chs=24x32&chco=' +
+        'FFFFFF,008CFF,000000&ext=.png';
+    return new google.maps.MarkerImage(imageUrl,
+        new google.maps.Size(24, 32));
 };
 
 speedTest.makeMarker = function (lat, lng, opts) {
@@ -129,15 +149,10 @@ speedTest.makeMarker = function (lat, lng, opts) {
 
     var latLng = new google.maps.LatLng(lat, lng);
 
-    var imageUrl = 'http://chart.apis.google.com/chart?cht=mm&chs=24x32&chco=' +
-        'FFFFFF,008CFF,000000&ext=.png';
-    var markerImage = new google.maps.MarkerImage(imageUrl,
-        new google.maps.Size(24, 32));
-
     var marker = new google.maps.Marker({
-        'position': latLng,
-        'icon': markerImage,
-        'title': opts.photo_title || opts.title
+        position: latLng,
+        icon: speedTest.makeMarkerImage(),
+        title: opts.photo_title || opts.title
     });
 
     var fn = speedTest.markerClickFunction(opts, latLng);
@@ -186,13 +201,14 @@ speedTest.markerClickFunction = function (opts, latlng) {
 speedTest.clear = function () {
     $('timetaken').innerHTML = ' ... ';
 
-    if (speedTest.markerClusterer) {
-        for (var i = 0, marker; marker = speedTest.markers[i]; i++) {
+    for (var i = 0, marker; marker = speedTest.markers[i]; i++) {
+        if (typeof marker.setMap === "function") {
             marker.setMap(null);
         }
-        speedTest.markerClusterer.clearMarkers();
     }
-    if (speedTest.clusterMgr) {
+    if (speedTest.markerClusterer) {
+        speedTest.markerClusterer.clearMarkers();
+    } else if (speedTest.clusterMgr) {
         speedTest.clusterMgr.reset();
     }
     speedTest.markers = [];
@@ -206,7 +222,17 @@ speedTest.change = function () {
 speedTest.time = function () {
     $('timetaken').innerHTML = 'timing...';
     var clusterType = $('clustertype').value;
-
+    delete(speedTest.markerClusterer);
+    delete(speedTest.clusterMgr);
+    
+    /*
+    speedTest.start = new Date();
+    if(window.console && $('firebugprofile').checked) { 
+        console.profile(); 
+    }  
+    */
+    speedTest.profileStart();
+    
     if (clusterType === 'markerclusterer' || clusterType === 'markerclustererplus') {
         speedTest.markerClusterer = new MarkerClusterer(speedTest.map, speedTest.markers);
         return;
@@ -226,5 +252,10 @@ speedTest.time = function () {
             marker.setMap(speedTest.map);
         }
     }
-    speedTest.profileEnd();
+    var end = new Date();
+    $('timetaken').innerHTML = end - speedTest.start;
+    if(window.console && $('firebugprofile').checked) { 
+        console.profileEnd(); 
+    }
 };
+

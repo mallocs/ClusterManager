@@ -1,4 +1,8 @@
 {
+    "devel": true,
+    "debug": true,
+    "esnext": true,
+    "globalstrict": true,
     "expr": true,
     "curly": false,
     "eqeqeq": true,
