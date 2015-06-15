@@ -100,9 +100,6 @@ export function createMarkerData(opts) {
             content: opts.content
         });
         google.maps.event.addListener(marker, "click", function() {
-            console.log("click");
-            console.log(opts);
-            console.log(marker);
             var now = new Date();
             iw.setZIndex(now.getTime());
             iw.open(opts.map, marker);

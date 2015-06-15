@@ -1,6 +1,8 @@
 "use strict";
 import {applyDefaults, createMarker} from "./utils";
 
+//TODO: make NormalizedMarker base class
+
 function LazyMarker(raw_marker) {
     if (raw_marker.constructor === LazyMarker) return raw_marker;
     this.raw_marker = raw_marker;
@@ -9,7 +11,6 @@ function LazyMarker(raw_marker) {
         this._marker = raw_marker;
     } else {
         this._marker = null;
-//        setMarkerMeta(this, raw_marker);
     }
     google.maps.event.addListener(this, "click", function (e) {
         //marker hasn't been added to the map yet, so not visible
@@ -32,20 +33,8 @@ LazyMarker.prototype.setMap = function (map) {
         subtype: "",
         content: ""
     };
-    var opts = applyDefaults(defaults, this.raw_marker);
 
-    //TODO: which createMarker
-    /*
-    this._marker = createMarker({
-        title: opts.title,
-        type: opts.type,
-        content: opts.content,
-        position: new google.maps.LatLng(opts.latitutde,
-                                        opts.longitude),
-        subtype: opts.subtype
-    });
-    */
-    this._marker = createMarker(opts);
+    this._marker = createMarker(applyDefaults(defaults, this.raw_marker));
     this._marker.setMap(map);
 };
 
