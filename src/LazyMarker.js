@@ -19,6 +19,12 @@ function LazyMarker(raw_marker) {
     });
 }
 
+LazyMarker.prototype.setVisible = function(visible) {
+    if (this._marker) {
+        this._marker.setVisible(visible);
+    }
+};
+
 LazyMarker.prototype.setMap = function (map) {
     if (this._marker) {
         this._marker.setMap(map);
@@ -29,8 +35,6 @@ LazyMarker.prototype.setMap = function (map) {
     var defaults = {
         map: map,
         title: this.raw_marker.title,
-        type: false,
-        subtype: "",
         content: ""
     };
 

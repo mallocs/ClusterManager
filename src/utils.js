@@ -71,10 +71,8 @@ export function createMarkerIconOpts(opts) {
 }
 
 export function createMarkerData(opts) {
-
     return applyDefaults({
         icon: createMarkerIconOpts(opts),
-        visible : false,
         content : "Marker"
     }, opts);  
 }
@@ -93,7 +91,12 @@ export function createMarkerData(opts) {
  * determines the content of the infowindow displayed when the marker is clicked.
  */
  export function createMarker(opts) {
-
+    if (typeof opts.position === "undefined" &&
+        typeof opts.latitude !== "undefined" &&
+        typeof opts.longitude !== "undefined") {
+        opts.position = new google.maps.LatLng(opts.latitude, opts.longitude);
+    }
+        
     var marker = new google.maps.Marker(opts);
     if (typeof opts.fn === "undefined") {
         var iw = new google.maps.InfoWindow({

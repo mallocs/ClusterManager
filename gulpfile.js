@@ -22,11 +22,12 @@ function compile(watch) {
   function rebundle() {
     bundler.bundle()
       .on('error', function(err) { console.error(err); this.emit('end'); })
-      .pipe(source('clustermanager.min.js'))
+      .pipe(source('clustermanager.js'))
       .pipe(buffer())
+      .pipe(gulp.dest(DESTINATION))
       .pipe($.sourcemaps.init({ loadMaps: true }))
-        // Add transformation tasks to the pipeline here.
-//        .pipe($.uglify())
+      .pipe($.uglify())
+      .pipe($.rename('clustermanager.min.js'))
       .pipe($.sourcemaps.write('./'))
       .pipe(gulp.dest(DESTINATION));  
   }
