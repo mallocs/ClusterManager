@@ -58,15 +58,14 @@ gulp.task('jshint', function () {
     .pipe($.if(!browserSync.active, $.jshint.reporter('fail')));
 });
 
-
-gulp.task('clean', require('del').bind(null, ['.tmp', 'dist']));
+gulp.task('clean', require('del').bind(null, ['dist']));
 
 gulp.task('serve', function () {
   browserSync({
     notify: false,
     port: 9000,
     server: {
-      baseDir: ['.tmp', 'test'],
+      baseDir: ['test'],
       routes: {
         '/src': 'src',
         '/dist': 'dist',
@@ -88,60 +87,3 @@ gulp.task('serve:dist', function () {
     port: 9001
   });
 });
-
-
-
-
-
-
-//gulp.task('build', ['jshint'], function () {
-//  return gulp.src('dist/**/*').pipe($.size({title: 'build', gzip: true}));
-//});
-
-/*****
-
-gulp.task('default', ['clean'], function () {
-  gulp.start('build');
-});
-
-gulp.task('browserify', function () {
-  var browserified = transform(function(filename) {
-    var b = browserify(filename);
-    return b.bundle();
-  });
-  return gulp.src(['./src/*.js'])
-    .pipe(browserified)
-    .pipe(gulp.dest('./dist'));
-});
-
-
-gulp.task('javascript', function () {
-  // set up the browserify instance on a task basis
-  var b = browserify({
-    entries: './entry.js',
-    debug: true
-  });
-
-  return b.bundle()
-    .pipe(source('app.js'))
-    .pipe(buffer())
-    .pipe(gulp.dest(DEST))
-    .pipe($.sourcemaps.init({loadMaps: true}))
-        // Add transformation tasks to the pipeline here.
-        .pipe($.uglify())
-        .on('error', gutil.log)
-    .pipe($.sourcemaps.write('./'))
-    .pipe($.rename({ extname: '.min.js' }))
-    .pipe(gulp.dest(DESTINATION));
-});
-
-gulp.task('default', function() {
-  return gulp.src('foo.js')
-    // This will output the non-minified version
-    .pipe(gulp.dest(DEST))
-    // This will minify and rename to foo.min.js
-    .pipe($.uglify())
-    .pipe($.rename({ extname: '.min.js' }))
-    .pipe(gulp.dest(DEST));
-});
-*******/

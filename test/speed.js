@@ -38,6 +38,15 @@ MarkerClusterer.prototype.onAdd = function () {
     speedTest.profileEnd();
 };
 
+MarkerClusterer.prototype.addToClosestClusterOld_ = MarkerClusterer.prototype.addToClosestCluster_;
+
+MarkerClusterer.prototype.addToClosestCluster_ = function () {
+    this.addToClosestClusterOld_.apply(this, arguments);
+    var end = new Date();
+    $('timetaken').innerHTML = end - speedTest.start;
+    speedTest.profileEnd();
+};
+
 
 speedTest.pics = null;
 speedTest.map = null;
