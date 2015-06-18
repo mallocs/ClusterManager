@@ -83,8 +83,8 @@
     </style>
 
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
-  <script type="text/javascript" src="../dist/clustermanager.min.js"></script>
-  <script type="text/javascript" src="../test/data.json"></script>
+    <script type="text/javascript" src="../test/data.json"></script>
+    <script type="text/javascript" src="../dist/clustermanager.min.js"></script>
     <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerclusterer/1.0.2/src/markerclusterer_compiled.js"></script>
     <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerclustererplus/2.1.2/src/markerclusterer_packed.js"></script>
     <script type="text/javascript" src="./speed_test.js"></script>
@@ -107,9 +107,10 @@
       </div>
 
       <div>
-        <div>Markers (1093 max): <input type="text" id="nummarkers" name="nummarkers" value="500" width="80"/></div>
-        <div><input type="checkbox" id="randommarkers" name="randommarkers">Random</input> (unlimited markers)</div>
-        <div><input type="checkbox" id="firebugprofile" name="firebugprofile">Firebug Profile Enabled</input></div>
+        <div>Markers: <input type="text" id="nummarkers" name="nummarkers" value="20000" width="80"/></div>
+        <div><input type="checkbox" id="randommarkers" name="randommarkers" checked="true">Random</input> (1093 max non-random)</div>
+        <div><input type="checkbox" id="lazymarkers" name="lazymarkers" checked="true">Lazy Markers</input> (ClusterManager only)</div>
+        <div><input type="checkbox" id="firebugprofile" name="firebugprofile">Profiler Enabled</input></div>
         <div><input type="submit" id="addmarkers" value="Run Test" /><input type="submit" id="clearmarkers" value="Clear Markers" />
         <span>Time used: <span id="timetaken">0</span> ms</span></div>
       </div>

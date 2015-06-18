@@ -11,7 +11,8 @@ function $(element) {
 speedTest = {};
 
 speedTest.profileStart = function () {
-    speedTest.start = new Date();
+    speedTest.start = performance.now();
+    speedTest.millisecondsUsed = 0;
     if (window.console && $('firebugprofile').checked) {
         console.profile();
     }
@@ -21,8 +22,19 @@ speedTest.profileEnd = function () {
     if (window.console && $('firebugprofile').checked) {
         console.profileEnd();
     }
-    var end = new Date();
-    $('timetaken').innerHTML = end - speedTest.start;
+    var end = performance.now();
+    speedTest.millisecondsUsed = end - speedTest.start;
+    speedTest.showTime(end - speedTest.start);
+};
+
+speedTest.showTime = function(time) {
+    if(!time) {
+        $('timetaken').innerHTML = ' ... ';
+    } else if (time < 0) {
+        $('timetaken').innerHTML = 'timing ... ';
+    } else {
+        $('timetaken').innerHTML = Math.round(time*100)/100;
+    }
 };
 
 //In MarkerClusterer, the clustering starts when onAdd is called, so we have to add the speed test code here or we're just testing how quickly
@@ -33,18 +45,23 @@ MarkerClusterer.prototype.onAddOld = MarkerClusterer.prototype.onAdd;
 
 MarkerClusterer.prototype.onAdd = function () {
     this.onAddOld.apply(this, arguments);
-    var end = new Date();
-    $('timetaken').innerHTML = end - speedTest.start;
     speedTest.profileEnd();
 };
 
 MarkerClusterer.prototype.addToClosestClusterOld_ = MarkerClusterer.prototype.addToClosestCluster_;
 
 MarkerClusterer.prototype.addToClosestCluster_ = function () {
+    var fnTimer = null;
+    if(speedTest.millisecondsUsed !== 0) {
+        fnTimer = performance.now();
+    }    
     this.addToClosestClusterOld_.apply(this, arguments);
-    var end = new Date();
-    $('timetaken').innerHTML = end - speedTest.start;
-    speedTest.profileEnd();
+
+    if(speedTest.time !== 0 && fnTimer) {
+        var end = performance.now();
+        speedTest.millisecondsUsed += end - fnTimer;
+        speedTest.showTime(speedTest.millisecondsUsed);
+    }
 };
 
 
@@ -208,7 +225,7 @@ speedTest.markerClickFunction = function (opts, latlng) {
 };
 
 speedTest.clear = function () {
-    $('timetaken').innerHTML = ' ... ';
+    speedTest.showTime(null);
 
     for (var i = 0, marker; marker = speedTest.markers[i]; i++) {
         if (typeof marker.setMap === "function") {
@@ -229,17 +246,12 @@ speedTest.change = function () {
 };
 
 speedTest.time = function () {
-    $('timetaken').innerHTML = 'timing...';
+    speedTest.showTime(-1);
+
     var clusterType = $('clustertype').value;
     delete(speedTest.markerClusterer);
     delete(speedTest.clusterMgr);
     
-    /*
-    speedTest.start = new Date();
-    if(window.console && $('firebugprofile').checked) { 
-        console.profile(); 
-    }  
-    */
     speedTest.profileStart();
     
     if (clusterType === 'markerclusterer' || clusterType === 'markerclustererplus') {
@@ -261,10 +273,6 @@ speedTest.time = function () {
             marker.setMap(speedTest.map);
         }
     }
-    var end = new Date();
-    $('timetaken').innerHTML = end - speedTest.start;
-    if(window.console && $('firebugprofile').checked) { 
-        console.profileEnd(); 
-    }
+    speedTest.profileEnd();
 };
 
